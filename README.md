@@ -10,7 +10,7 @@ Tempo shows your Steam account as "in game". The games get playtime. You do not 
 2. Extract the file.
 3. Do the install:
    - **Windows:** Double-click `install.cmd`.
-   - **macOS and Linux:** Open Terminal. Type `sh `, drag `install.sh` into the window, and push Enter.
+   - **macOS and Linux:** Open a terminal in the extracted folder. Type `sh install.sh`.
 4. Open a new terminal. Type `tempo-cli --help`.
 
 <details>
