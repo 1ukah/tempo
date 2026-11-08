@@ -4,6 +4,8 @@ Steam hour farming from the command line.
 
 Tempo farms playtime and achievements in your Steam games. You do not have to play the games. You do not need the Steam client or the games installed.
 
+When you play a game on your account, tempo stops. When you close the game, tempo starts again. When the connection stops, tempo connects again.
+
 ## Install
 
 1. Download the file for your computer from [Releases](../../releases).
@@ -50,7 +52,7 @@ On macOS, first type `xattr -d com.apple.quarantine tempo-cli`.
 tempo-cli 730
 ```
 
-`730` is the app ID. Find it in the store URL: `store.steampowered.com/app/730/`.
+`730` is the app ID. Find it in the store URL (example: `store.steampowered.com/app/730/`) or on [SteamDB](https://steamdb.info).
 
 At the first start, sign in with your password and Steam Guard. Tempo keeps a login token. It does not keep your password.
 
@@ -76,13 +78,6 @@ To stop, push Ctrl+C.
 | `--logout` | Remove the saved login. |
 | `-h`, `--help` | Show the help. |
 | `-V`, `--version` | Show the version. |
-
-## How it works
-
-- **Pause:** When you play a game on your account, tempo stops. When you close the game, tempo starts again.
-- **Reconnect:** When the connection stops, tempo connects again.
-- **Status:** Tempo keeps your status for each account. The default is `online`.
-- **Achievements:** Tempo unlocks one achievement every 30 to 150 minutes. Common achievements unlock first. Tempo does not unlock rare achievements. Use this only for games that you do not play.
 
 ## Saved data
 
