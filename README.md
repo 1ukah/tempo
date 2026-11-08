@@ -1,10 +1,16 @@
 # tempo
 
-Steam hour farming from the command line.
+[![Release](https://img.shields.io/github/v/release/1ukah/tempo)](../../releases)
+[![CI](https://github.com/1ukah/tempo/actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/1ukah/tempo)](LICENSE)
 
-Tempo farms playtime and achievements in your Steam games. You do not have to play the games. You do not need the Steam client or the games installed.
+**Farm Steam playtime and achievements from your terminal.** No Steam client. No game downloads.
 
-When you play a game on your account, tempo stops. When you close the game, tempo starts again. When you lose the internet connection, tempo waits for the connection and starts again.
+- Idle up to 32 games at the same time
+- Unlock achievements slowly, common ones first
+- Pauses when you play a game, and starts again when you stop
+- Waits for the internet connection when it goes down, and starts again
+- Works on Windows, macOS and Linux
 
 ## Install
 
