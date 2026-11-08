@@ -62,13 +62,15 @@ impl Plan {
         let max_percent = percents.values().copied().fold(0.0f32, f32::max);
         let rare_below = max_percent * RARE_RATIO;
 
-        let (mut have, mut protected, mut rare) = (0, 0, 0);
+        let (mut protected, mut rare) = (0, 0);
         let mut candidates = Vec::new();
 
         for def in definitions {
             if unlocked.contains(&(def.stat_id, def.bit)) {
-                have += 1;
-            } else if def.protected {
+                continue;
+            }
+
+            if def.protected {
                 protected += 1;
             } else {
                 match percents.get(&def.api_name) {
@@ -85,7 +87,6 @@ impl Plan {
             }
         }
 
-        let total = have + protected + rare + candidates.len();
         let mut skipped = Vec::new();
 
         if rare > 0 {
@@ -103,14 +104,12 @@ impl Plan {
         };
 
         if candidates.is_empty() {
-            ui::info(format!(
-                "{game}: {have}/{total} achievements, nothing left to farm{skipped}."
-            ));
+            ui::info(format!("{game}: no achievements left to unlock{skipped}."));
             return None;
         }
 
         ui::info(format!(
-            "{game}: {have}/{total} achievements, {} will unlock over time{skipped}.",
+            "{game}: {} achievements will unlock over time{skipped}.",
             candidates.len()
         ));
 
@@ -199,6 +198,24 @@ impl Plan {
             _ => self.next_at = idled + RETRY_LATER,
         }
     }
+}
+
+pub async fn progress(connection: &Connection, app: u32) -> Option<(usize, usize)> {
+    let stats = get_user_stats(connection, app, -1).await?;
+    let schema = kv::parse(stats.schema.as_deref()?)?;
+    let definitions = achievements_in(&schema);
+
+    if definitions.is_empty() {
+        return None;
+    }
+
+    let unlocked = unlocked_bits(&stats);
+    let have = definitions
+        .iter()
+        .filter(|d| unlocked.contains(&(d.stat_id, d.bit)))
+        .count();
+
+    Some((have, definitions.len()))
 }
 
 struct Definition {

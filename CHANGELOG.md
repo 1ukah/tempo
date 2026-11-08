@@ -5,6 +5,10 @@ The release workflow uses the section of each version as the release notes.
 
 ## [Unreleased]
 
+### Added
+
+- Show a list of the idled games with their names, playtime and achievements.
+
 ### Fixed
 
 - Show a clear question for the Steam Guard code.

@@ -24,7 +24,7 @@ use tokio::sync::watch;
 use tokio::time::{interval, sleep, timeout};
 use tokio_stream::StreamExt;
 
-use crate::achievements::{Plan, Rng};
+use crate::achievements::{self, Plan, Rng};
 use crate::guard::GuardPrompt;
 use crate::status::Status;
 use crate::{store, ui};
@@ -357,8 +357,8 @@ impl Idler {
                 _ = ticker.tick() => {
                     if let Some(since) = self.idling_since {
                         ui::status(Some(format!(
-                            "Idling {} game(s) for {} (Ctrl+C to stop)",
-                            self.apps.len(),
+                            "Idling {} for {} (Ctrl+C to stop)",
+                            games_label(self.apps.len()),
                             ui::duration(self.idled + since.elapsed())
                         )));
                     }
@@ -410,17 +410,26 @@ impl Idler {
         }
 
         self.idling_since.get_or_insert_with(Instant::now);
-        ui::ok(format!("Idling {} game(s):", self.apps.len()));
+        ui::ok(format!("Idling {}:", games_label(self.apps.len())));
 
-        for id in &self.apps {
-            match self.games.as_ref().and_then(|g| g.get(id)) {
-                Some(game) => ui::info(format!(
-                    "  {} ({id}), {:.1} h on record",
+        let idled_minutes = u32::try_from(self.idled.as_secs() / 60).unwrap_or(u32::MAX);
+
+        for &id in &self.apps {
+            let progress = achievements::progress(connection, id).await;
+            let mut line = match self.games.as_ref().and_then(|g| g.get(&id)) {
+                Some(game) => format!(
+                    "  \u{2022} {} ({id}): {} played",
                     game.name,
-                    f64::from(game.minutes) / 60.0
-                )),
-                None => ui::info(format!("  app {id}")),
+                    playtime(game.minutes.saturating_add(idled_minutes))
+                ),
+                None => format!("  \u{2022} App {id}"),
+            };
+
+            if let Some((have, total)) = progress {
+                line.push_str(&format!(", {have}/{total} achievements"));
             }
+
+            ui::info(line);
         }
 
         Ok(())
@@ -513,6 +522,21 @@ impl Idler {
                 let _ = store::save_token(&self.user, renewed);
             }
         }
+    }
+}
+
+fn games_label(count: usize) -> String {
+    if count == 1 {
+        "1 game".into()
+    } else {
+        format!("{count} games")
+    }
+}
+
+fn playtime(minutes: u32) -> String {
+    match minutes {
+        0..60 => format!("{minutes}m"),
+        _ => format!("{}h {:02}m", minutes / 60, minutes % 60),
     }
 }
 
