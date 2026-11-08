@@ -63,10 +63,14 @@ pub fn status(text: Option<String>) {
     }
 }
 
-pub fn prompt(question: &str) -> std::io::Result<String> {
+pub fn ask(question: &str) {
     status(None);
     print!("\x1b[96m{question}\x1b[0m");
     let _ = stdout().flush();
+}
+
+pub fn prompt(question: &str) -> std::io::Result<String> {
+    ask(question);
 
     let mut line = String::new();
 

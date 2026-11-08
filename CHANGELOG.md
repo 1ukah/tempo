@@ -3,6 +3,13 @@
 All important changes to tempo are in this file.
 The release workflow uses the section of each version as the release notes.
 
+## [Unreleased]
+
+### Fixed
+
+- Show a clear question for the Steam Guard code.
+- Stop with an error when the account does not own an app ID.
+
 ## [0.1.0]
 
 ### Added

@@ -3,8 +3,8 @@ use std::pin::pin;
 use std::time::{Duration, Instant};
 
 use steam_vent::auth::{
-    AuthConfirmationHandler, ConsoleAuthConfirmationHandler, DeviceConfirmationHandler,
-    FileGuardDataStore,
+    AuthConfirmationHandler, DeviceConfirmationHandler, FileGuardDataStore,
+    UserProvidedAuthConfirmationHandler,
 };
 use steam_vent::{Connection, ConnectionError, ConnectionTrait, EResult, LoginError, ServerList};
 use steam_vent_proto_common::protobuf::EnumOrUnknown;
@@ -25,6 +25,7 @@ use tokio::time::{interval, sleep, timeout};
 use tokio_stream::StreamExt;
 
 use crate::achievements::{Plan, Rng};
+use crate::guard::GuardPrompt;
 use crate::status::Status;
 use crate::{store, ui};
 
@@ -194,16 +195,15 @@ impl Idler {
         }
 
         let password = self.password.clone().unwrap_or_default();
-        ui::info(
-            "Signing in. If Steam asks, type your Steam Guard code, or approve the sign-in in the Steam Mobile app.",
-        );
+        ui::info("Signing in...");
 
         let result = Connection::login(
             &servers,
             &self.user,
             &password,
             FileGuardDataStore::new(store::guard_data_path()),
-            ConsoleAuthConfirmationHandler::default().or(DeviceConfirmationHandler),
+            UserProvidedAuthConfirmationHandler::new(tokio::io::stdin(), GuardPrompt::default())
+                .or(DeviceConfirmationHandler),
         )
         .await;
 
@@ -275,6 +275,10 @@ impl Idler {
 
         self.renew_token(&connection).await;
         self.load_games(&connection).await;
+
+        if let Some(missing) = self.not_owned() {
+            return Outcome::Fatal(missing);
+        }
 
         let mut blocked = matches!(
             timeout(Duration::from_secs(2), playing_state.next()).await,
@@ -415,9 +419,7 @@ impl Idler {
                     game.name,
                     f64::from(game.minutes) / 60.0
                 )),
-                None => ui::info(format!(
-                    "  app {id} (not found in your library, Steam may not count playtime)"
-                )),
+                None => ui::info(format!("  app {id}")),
             }
         }
 
@@ -430,6 +432,27 @@ impl Idler {
         }
 
         ui::status(None);
+    }
+
+    fn not_owned(&self) -> Option<String> {
+        let games = self.games.as_ref()?;
+        let missing: Vec<String> = self
+            .apps
+            .iter()
+            .filter(|id| !games.contains_key(id))
+            .map(u32::to_string)
+            .collect();
+
+        match missing.as_slice() {
+            [] => None,
+            [one] => Some(format!(
+                "This account does not own app ID {one}. Check the app ID in the store URL."
+            )),
+            many => Some(format!(
+                "This account does not own app IDs {}. Check the app IDs in the store URL.",
+                many.join(", ")
+            )),
+        }
     }
 
     async fn load_games(&mut self, connection: &Connection) {
