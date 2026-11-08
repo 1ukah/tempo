@@ -2,7 +2,7 @@
 
 Steam hour farming from the command line.
 
-Tempo shows your Steam account as "in game". The games get playtime. You do not need the Steam client or the games.
+Tempo farms playtime and achievements in your Steam games. You do not have to play the games. You do not need the Steam client or the games installed.
 
 ## Install
 
