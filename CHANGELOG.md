@@ -3,6 +3,13 @@
 All important changes to tempo are in this file.
 The release workflow uses the section of each version as the release notes.
 
+## [Unreleased]
+
+### Added
+
+- Install scripts in the release files: `install.cmd` for Windows and `install.sh` for macOS and Linux. They add `tempo-cli` to your PATH.
+- Clearer install steps in the README.
+
 ## [0.2.1]
 
 ### Fixed
