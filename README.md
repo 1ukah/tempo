@@ -52,7 +52,7 @@ On macOS, first type `xattr -d com.apple.quarantine tempo-cli`.
 tempo-cli 730
 ```
 
-`730` is the app ID. Find it in the store URL (example: `store.steampowered.com/app/730/`) or on [SteamDB](https://steamdb.info).
+`730` is the game's app ID. Find it in the store URL (example: `store.steampowered.com/app/730/`) or on [SteamDB](https://steamdb.info).
 
 At the first start, sign in with your password and Steam Guard. Tempo keeps a login token. It does not keep your password.
 
