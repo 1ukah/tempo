@@ -1,0 +1,10 @@
+/target
+/dist
+*.token
+*.status
+guard.json
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
