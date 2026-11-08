@@ -6,55 +6,43 @@ Tempo shows your Steam account as "in game". The games get playtime. You do not 
 
 ## Install
 
-Download the file for your system from [Releases](../../releases):
+1. Download the file for your computer from [Releases](../../releases).
+2. Extract the file.
+3. Do the install:
+   - **Windows:** Double-click `install.cmd`.
+   - **macOS and Linux:** Open Terminal. Type `sh `, drag `install.sh` into the window, and push Enter.
+4. Open a new terminal. Type `tempo-cli --help`.
 
-| System | File |
+<details>
+<summary>Which file do I download?</summary>
+
+| Computer | File |
 |---|---|
-| Windows | `tempo-cli-x86_64-pc-windows-msvc.zip` |
-| Windows on ARM | `tempo-cli-aarch64-pc-windows-msvc.zip` |
-| macOS with Apple chip (M1 or newer) | `tempo-cli-aarch64-apple-darwin.tar.gz` |
-| macOS with Intel chip | `tempo-cli-x86_64-apple-darwin.tar.gz` |
-| Linux | `tempo-cli-x86_64-unknown-linux-gnu.tar.gz` |
-| Linux on ARM | `tempo-cli-aarch64-unknown-linux-gnu.tar.gz` |
+| Windows | `x86_64-pc-windows-msvc.zip` |
+| Mac with Apple chip | `aarch64-apple-darwin.tar.gz` |
+| Mac with Intel chip | `x86_64-apple-darwin.tar.gz` |
+| Linux | `x86_64-unknown-linux-gnu.tar.gz` |
 
-Extract the file. On Windows, right-click the zip file and select **Extract All**. On macOS, double-click the file.
+For ARM computers on Windows or Linux, use the `aarch64` file.
 
-Then select one of these two methods.
+</details>
 
-### Method A: Install (recommended)
+<details>
+<summary>Windows shows a warning</summary>
 
-After you install, you can use `tempo-cli` in every terminal, from every folder.
+Click **More info**. Then click **Run anyway**.
 
-**Windows:** In the extracted folder, double-click `install.cmd`. If Windows shows "Windows protected your PC", click **More info**, then **Run anyway**.
+</details>
 
-**macOS and Linux:**
+<details>
+<summary>Use tempo without install</summary>
 
-1. Open the Terminal app.
-2. Type `sh ` (with a space at the end). Then drag `install.sh` from the extracted folder into the Terminal window.
-3. Push Enter.
+1. Open a terminal in the extracted folder.
+2. Type `./tempo-cli` in place of `tempo-cli`. Example: `./tempo-cli 730`.
 
-When the install is done, close the terminal and open a new one. Type `tempo-cli --help` to make sure that it works.
+On macOS, first type `xattr -d com.apple.quarantine tempo-cli`.
 
-The install puts `tempo-cli` in this folder:
-
-| System | Folder |
-|---|---|
-| Windows | `%LOCALAPPDATA%\Programs\tempo` |
-| macOS and Linux | `~/.local/bin` |
-
-To install a new version, download it and do the install again. To remove tempo, delete `tempo-cli` from this folder.
-
-### Method B: Use without install
-
-Open a terminal in the extracted folder:
-
-- **Windows:** Open the folder. Right-click an empty area in the folder and select **Open in Terminal**. On Windows 10, hold Shift, right-click, and select **Open PowerShell window here**.
-- **macOS:** Open the Terminal app. Type `cd ` (with a space at the end), drag the folder into the Terminal window, and push Enter. At the first start, type `xattr -d com.apple.quarantine tempo-cli` and push Enter. This lets macOS run the file.
-- **Linux:** Right-click an empty area in the folder and select **Open in Terminal**.
-
-Then type `./tempo-cli` instead of `tempo-cli` in the commands below. For example, `./tempo-cli 730`.
-
-With this method, you must always open the terminal in this folder.
+</details>
 
 ## Use
 
