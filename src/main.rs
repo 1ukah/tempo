@@ -1,6 +1,8 @@
 mod achievements;
 mod guard;
 mod idler;
+mod kv;
+mod library;
 mod status;
 mod store;
 mod ui;

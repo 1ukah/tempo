@@ -12,8 +12,10 @@ use steam_vent_proto_steam::enums_clientserver::EMsg;
 use steam_vent_proto_steam::steammessages_auth_steamclient::{
     CAuthentication_AccessToken_GenerateForApp_Request, ETokenRenewalType,
 };
-use steam_vent_proto_steam::steammessages_clientserver::CMsgClientGamesPlayed;
 use steam_vent_proto_steam::steammessages_clientserver::cmsg_client_games_played::GamePlayed;
+use steam_vent_proto_steam::steammessages_clientserver::{
+    CMsgClientGamesPlayed, CMsgClientLicenseList,
+};
 use steam_vent_proto_steam::steammessages_clientserver_2::CMsgClientPlayingSessionState;
 use steam_vent_proto_steam::steammessages_clientserver_friends::CMsgClientChangeStatus;
 use steam_vent_proto_steam::steammessages_clientserver_login::CMsgClientLoggedOff;
@@ -27,7 +29,7 @@ use tokio_stream::StreamExt;
 use crate::achievements::{self, Plan, Rng};
 use crate::guard::GuardPrompt;
 use crate::status::Status;
-use crate::{store, ui};
+use crate::{library, store, ui};
 
 pub const MAX_GAMES: usize = 32;
 
@@ -258,6 +260,8 @@ impl Idler {
     async fn idle(&mut self, connection: Connection) -> Outcome {
         let mut playing_state = pin!(connection.on::<CMsgClientPlayingSessionState>());
         let mut logged_off = pin!(connection.on::<CMsgClientLoggedOff>());
+        let mut license_list = pin!(connection.on::<CMsgClientLicenseList>());
+        let mut licenses = library::buffered_licenses(&connection);
 
         ui::ok(format!("Signed in as {}.", self.user));
         self.signed_in = true;
@@ -276,8 +280,35 @@ impl Idler {
         self.renew_token(&connection).await;
         self.load_games(&connection).await;
 
-        if let Some(missing) = self.not_owned() {
-            return Outcome::Fatal(missing);
+        let unlisted = self.unlisted();
+
+        if !unlisted.is_empty() {
+            if licenses.is_none()
+                && let Ok(Some(Ok(list))) =
+                    timeout(Duration::from_secs(5), license_list.next()).await
+            {
+                licenses = Some(library::licenses_from(&list));
+            }
+
+            let owned = match &licenses {
+                Some(licenses) => library::owned_among(&connection, licenses, &unlisted).await,
+                None => None,
+            };
+
+            match owned {
+                Some(owned) => {
+                    let owned: Vec<u32> = unlisted
+                        .into_iter()
+                        .filter(|id| owned.contains(id))
+                        .collect();
+                    self.add_unplayed(&connection, &owned).await;
+
+                    if let Some(message) = self.not_owned() {
+                        return Outcome::Fatal(message);
+                    }
+                }
+                None => self.add_unplayed(&connection, &unlisted).await,
+            }
         }
 
         let mut blocked = matches!(
@@ -441,6 +472,33 @@ impl Idler {
         }
 
         ui::status(None);
+    }
+
+    fn unlisted(&self) -> Vec<u32> {
+        let Some(games) = self.games.as_ref() else {
+            return Vec::new();
+        };
+
+        self.apps
+            .iter()
+            .copied()
+            .filter(|id| !games.contains_key(id))
+            .collect()
+    }
+
+    async fn add_unplayed(&mut self, connection: &Connection, apps: &[u32]) {
+        if apps.is_empty() {
+            return;
+        }
+
+        let mut names = library::names(connection, apps).await;
+
+        if let Some(games) = self.games.as_mut() {
+            for &id in apps {
+                let name = names.remove(&id).unwrap_or_else(|| format!("App {id}"));
+                games.insert(id, Game { name, minutes: 0 });
+            }
+        }
     }
 
     fn not_owned(&self) -> Option<String> {

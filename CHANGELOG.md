@@ -3,6 +3,12 @@
 All important changes to tempo are in this file.
 The release workflow uses the section of each version as the release notes.
 
+## [Unreleased]
+
+### Fixed
+
+- Accept free-to-play games that are in the library but not played yet.
+
 ## [0.2.0]
 
 ### Added

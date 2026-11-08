@@ -8,7 +8,7 @@ use steam_vent_proto_steam::steammessages_clientserver_userstats::{
 };
 use tokio::time::timeout;
 
-use crate::ui;
+use crate::{kv, ui};
 
 const RARE_RATIO: f32 = 0.10;
 const FIRST_UNLOCK_MINUTES: (u64, u64) = (20, 60);
@@ -441,165 +441,46 @@ impl Rng {
     }
 }
 
-mod kv {
-    pub enum Kv {
-        Section(Vec<(String, Kv)>),
-        Str(String),
-        Int(i64),
-        Float(f32),
-    }
+#[cfg(test)]
+mod tests {
+    use crate::kv::parse;
 
-    impl Kv {
-        pub fn get(&self, key: &str) -> Option<&Kv> {
-            self.children()
-                .iter()
-                .find(|(k, _)| k.eq_ignore_ascii_case(key))
-                .map(|(_, v)| v)
-        }
+    #[test]
+    fn parses_nested_schema() {
+        let mut d = Vec::new();
+        let sect = |d: &mut Vec<u8>, k: &str| {
+            d.push(0);
+            d.extend(k.as_bytes());
+            d.push(0);
+        };
+        let s = |d: &mut Vec<u8>, k: &str, v: &str| {
+            d.push(1);
+            d.extend(k.as_bytes());
+            d.push(0);
+            d.extend(v.as_bytes());
+            d.push(0);
+        };
+        let i = |d: &mut Vec<u8>, k: &str, v: i32| {
+            d.push(2);
+            d.extend(k.as_bytes());
+            d.push(0);
+            d.extend(v.to_le_bytes());
+        };
+        sect(&mut d, "620");
+        sect(&mut d, "stats");
+        sect(&mut d, "1");
+        i(&mut d, "type", 4);
+        sect(&mut d, "bits");
+        sect(&mut d, "0");
+        s(&mut d, "name", "ACH.A");
+        i(&mut d, "bit", 0);
+        d.extend([8, 8, 8, 8, 8, 8]);
 
-        pub fn children(&self) -> &[(String, Kv)] {
-            match self {
-                Kv::Section(children) => children,
-                _ => &[],
-            }
-        }
-
-        pub fn first_section(&self) -> Option<&Kv> {
-            self.children()
-                .iter()
-                .map(|(_, v)| v)
-                .find(|v| matches!(v, Kv::Section(_)))
-        }
-
-        pub fn as_text(&self) -> String {
-            match self {
-                Kv::Str(s) => s.clone(),
-                Kv::Int(i) => i.to_string(),
-                Kv::Float(f) => f.to_string(),
-                Kv::Section(_) => String::new(),
-            }
-        }
-
-        pub fn as_u32(&self) -> Option<u32> {
-            match self {
-                Kv::Int(i) => u32::try_from(*i).ok(),
-                Kv::Str(s) => s.trim().parse().ok(),
-                _ => None,
-            }
-        }
-    }
-
-    pub fn parse(data: &[u8]) -> Option<Kv> {
-        let mut pos = 0;
-        let mut root = Vec::new();
-        section(data, &mut pos, &mut root, 0)?;
-        Some(Kv::Section(root))
-    }
-
-    fn section(data: &[u8], pos: &mut usize, out: &mut Vec<(String, Kv)>, depth: u8) -> Option<()> {
-        if depth > 32 {
-            return None;
-        }
-
-        while *pos < data.len() {
-            let kind = data[*pos];
-            *pos += 1;
-
-            if matches!(kind, 8 | 11) {
-                return Some(());
-            }
-
-            let key = cstr(data, pos)?;
-
-            let value = match kind {
-                0 => {
-                    let mut children = Vec::new();
-                    section(data, pos, &mut children, depth + 1)?;
-                    Kv::Section(children)
-                }
-                1 => Kv::Str(cstr(data, pos)?),
-                2 | 4 | 6 => Kv::Int(i64::from(i32::from_le_bytes(take(data, pos)?))),
-                3 => Kv::Float(f32::from_le_bytes(take(data, pos)?)),
-                5 => Kv::Str(wide_str(data, pos)?),
-                7 => Kv::Int(u64::from_le_bytes(take(data, pos)?) as i64),
-                10 => Kv::Int(i64::from_le_bytes(take(data, pos)?)),
-                _ => return None,
-            };
-
-            out.push((key, value));
-        }
-
-        Some(())
-    }
-
-    fn take<const N: usize>(data: &[u8], pos: &mut usize) -> Option<[u8; N]> {
-        let bytes = data.get(*pos..*pos + N)?.try_into().ok()?;
-        *pos += N;
-        Some(bytes)
-    }
-
-    fn cstr(data: &[u8], pos: &mut usize) -> Option<String> {
-        let end = *pos + data.get(*pos..)?.iter().position(|&b| b == 0)?;
-        let text = String::from_utf8_lossy(&data[*pos..end]).into_owned();
-        *pos = end + 1;
-        Some(text)
-    }
-
-    fn wide_str(data: &[u8], pos: &mut usize) -> Option<String> {
-        let mut units = Vec::new();
-
-        loop {
-            let unit = u16::from_le_bytes(take(data, pos)?);
-
-            if unit == 0 {
-                return Some(String::from_utf16_lossy(&units));
-            }
-
-            units.push(unit);
-        }
-    }
-
-    #[cfg(test)]
-    mod tests {
-        use super::*;
-
-        #[test]
-        fn parses_nested_schema() {
-            let mut d = Vec::new();
-            let sect = |d: &mut Vec<u8>, k: &str| {
-                d.push(0);
-                d.extend(k.as_bytes());
-                d.push(0);
-            };
-            let s = |d: &mut Vec<u8>, k: &str, v: &str| {
-                d.push(1);
-                d.extend(k.as_bytes());
-                d.push(0);
-                d.extend(v.as_bytes());
-                d.push(0);
-            };
-            let i = |d: &mut Vec<u8>, k: &str, v: i32| {
-                d.push(2);
-                d.extend(k.as_bytes());
-                d.push(0);
-                d.extend(v.to_le_bytes());
-            };
-            sect(&mut d, "620");
-            sect(&mut d, "stats");
-            sect(&mut d, "1");
-            i(&mut d, "type", 4);
-            sect(&mut d, "bits");
-            sect(&mut d, "0");
-            s(&mut d, "name", "ACH.A");
-            i(&mut d, "bit", 0);
-            d.extend([8, 8, 8, 8, 8, 8]);
-
-            let root = parse(&d).unwrap();
-            let defs = crate::achievements::achievements_in(&root);
-            assert_eq!(defs.len(), 1);
-            assert_eq!(defs[0].api_name, "ACH.A");
-            assert_eq!(defs[0].stat_id, 1);
-            assert_eq!(defs[0].bit, 0);
-        }
+        let root = parse(&d).unwrap();
+        let defs = crate::achievements::achievements_in(&root);
+        assert_eq!(defs.len(), 1);
+        assert_eq!(defs[0].api_name, "ACH.A");
+        assert_eq!(defs[0].stat_id, 1);
+        assert_eq!(defs[0].bit, 0);
     }
 }
