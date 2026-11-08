@@ -1,8 +1,6 @@
 # tempo
 
 [![Release](https://img.shields.io/github/v/release/1ukah/tempo)](../../releases)
-[![CI](https://github.com/1ukah/tempo/actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/1ukah/tempo)](LICENSE)
 
 **Farm Steam playtime and achievements from your terminal.** No Steam client. No game downloads.
 
