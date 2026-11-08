@@ -4,7 +4,7 @@ Steam hour farming from the command line.
 
 Tempo farms playtime and achievements in your Steam games. You do not have to play the games. You do not need the Steam client or the games installed.
 
-When you play a game on your account, tempo stops. When you close the game, tempo starts again. When the connection stops, tempo connects again.
+When you play a game on your account, tempo stops. When you close the game, tempo starts again. When you lose the internet connection, tempo waits for the connection and starts again.
 
 ## Install
 
@@ -12,7 +12,7 @@ When you play a game on your account, tempo stops. When you close the game, temp
 2. Extract the file.
 3. Do the install:
    - **Windows:** Double-click `install.cmd`.
-   - **macOS and Linux:** Open a terminal in the extracted folder. Type `sh install.sh`.
+   - **macOS and Linux:** Run `install.sh` from a terminal.
 4. Open a new terminal. Type `tempo-cli --help`.
 
 <details>
